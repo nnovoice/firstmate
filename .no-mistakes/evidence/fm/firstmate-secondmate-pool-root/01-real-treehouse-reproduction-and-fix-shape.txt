@@ -1,0 +1,59 @@
+# Real treehouse v2.3.0: one origin, two clones, TREEHOUSE_ROOT=/tmp/fm-lab.yRS2BE/treehouse-base
+main clone git dir: /tmp/fm-lab.yRS2BE/main/projects/proj/.git
+mate clone git dir: /tmp/fm-lab.yRS2BE/mate/projects/proj/.git
+
+## 1. main home acquires and returns a slot (creates the shared pool from the MAIN clone)
+$ treehouse get --lease --no-fetch  (from main clone) -> /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj
+  stderr: A new version of treehouse is available: v2.3.0 → v3.1.2
+  stderr: Run "treehouse update" to update
+  stderr: 
+  stderr: 🌳 Setting up worktree...
+  stderr: 🌳 Leased worktree at /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj. Run 'treehouse return /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj' to release it.
+slot git common dir: /tmp/fm-lab.yRS2BE/main/projects/proj/.git
+  return: A new version of treehouse is available: v2.3.0 → v3.1.2
+  return: Run "treehouse update" to update
+  return: 
+  return: 🌳 Worktree returned to pool.
+
+## 2. REPRODUCTION: mate clone runs the bare 'treehouse get' (what the secondmate typed before this change)
+$ treehouse get --lease --no-fetch  (from mate clone) -> /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj
+  stderr: A new version of treehouse is available: v2.3.0 → v3.1.2
+  stderr: Run "treehouse update" to update
+  stderr: 
+  stderr: 🌳 Setting up worktree...
+  stderr: 🌳 Leased worktree at /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj. Run 'treehouse return /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj' to release it.
+slot git common dir: /tmp/fm-lab.yRS2BE/main/projects/proj/.git
+=> BUG REPRODUCED: the mate was handed a worktree of the MAIN home's clone
+  return: A new version of treehouse is available: v2.3.0 → v3.1.2
+  return: Run "treehouse update" to update
+  return: 
+  return: 🌳 Worktree returned to pool.
+
+## 3. FIX SHAPE: mate clone runs 'treehouse get --root <base>/.fm-pools/lab-mate' (what fm-spawn.sh now types)
+$ treehouse get --root '/tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate' --lease --no-fetch  (from mate clone) -> /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj
+  stderr: A new version of treehouse is available: v2.3.0 → v3.1.2
+  stderr: Run "treehouse update" to update
+  stderr: 
+  stderr: 🌳 Setting up worktree...
+  stderr: 🌳 Leased worktree at /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj. Run 'treehouse return /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj' to release it.
+slot git common dir: /tmp/fm-lab.yRS2BE/mate/projects/proj/.git
+=> slot is a worktree of the MATE's own clone, under the per-home root
+treehouse status --root /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate:
+  A new version of treehouse is available: v2.3.0 → v3.1.2
+  Run "treehouse update" to update
+  
+  1     leased       /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj  (held by lab-mate-root)
+return with --root:
+  A new version of treehouse is available: v2.3.0 → v3.1.2
+  Run "treehouse update" to update
+  
+  🌳 Worktree returned to pool.
+pool layout under per-home root:
+  /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate
+  /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse
+  /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/.gitignore
+  /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f
+  /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/treehouse-state.lock
+  /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/treehouse-state.json
+  /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1
+nothing above .fm-pools is a firstmate home: .fm-pools .treehouse 

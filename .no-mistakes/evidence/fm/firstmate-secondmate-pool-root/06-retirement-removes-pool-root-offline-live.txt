@@ -1,0 +1,17 @@
+# Retirement with every slot free and the origin unreachable: home and per-home pool root both go
+  mate clone origin now: /tmp/fm-lab.yRS2BE/no-such-origin.git (does not exist)
+  per-home root before: .treehouse 
+$ FM_HOME=/tmp/fm-lab.yRS2BE/main bin/fm-teardown.sh lab-mate --force
+  > fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.yRS2BE/main
+  > teardown lab-mate complete (window firstmate:fm-lab-mate, worktree /tmp/fm-lab.yRS2BE/mate)
+  exit=0 elapsed=1s
+## after
+  per-home pool root removed: /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate
+  shared .fm-pools parent kept: /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools (0 entries)
+  secondmate home removed: /tmp/fm-lab.yRS2BE/mate
+  secondmate record removed
+  secondmates.md: 
+  lab tmux windows: lab 
+  main home's shared pool: 
+    1     available    /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj
+  ~/.treehouse untouched by the lab: 0 entries for the lab project

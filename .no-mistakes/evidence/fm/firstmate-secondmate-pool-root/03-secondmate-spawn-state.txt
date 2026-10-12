@@ -1,0 +1,46 @@
+# After the secondmate spawn: live state
+## task record /tmp/fm-lab.yRS2BE/mate/state/labscout-1791790212.meta
+  window=firstmate:fm-labscout-1791790212
+  endpoint_task_id=labscout-1791790212
+  worktree=/tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj
+  project=/tmp/fm-lab.yRS2BE/mate/projects/proj
+  harness=claude
+  kind=scout
+  tasktmp=/tmp/fm-labscout-1791790212
+  model=sonnet
+  effort=low
+  busy_gen=g1791790264.444336.28888
+  spawn_gen=s1791790264.442353.6537
+## clone identity
+  worktree git common dir : /tmp/fm-lab.yRS2BE/mate/projects/proj/.git
+  mate clone git dir      : /tmp/fm-lab.yRS2BE/mate/projects/proj/.git
+  main clone git dir      : /tmp/fm-lab.yRS2BE/main/projects/proj/.git
+  => worker worktree belongs to the MATE's own clone
+## slot claim /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/.fm-slot-owner
+  task=labscout-1791790212
+  home=/tmp/fm-lab.yRS2BE/mate
+## treehouse status --root /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate (per-home pool)
+  1     in-use       /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj
+                     bash (443017), claude (445560), npm exec trigger.dev@4.4.3 mcp (446257), sh (447444), MainThread (447446)
+## treehouse status (main home's shared pool, TREEHOUSE_ROOT=/tmp/fm-lab.yRS2BE/treehouse-base) - untouched by the mate
+  1     available    /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj
+## per-home pool state file (real treehouse-state.json)
+  {"name":"1","path":"/tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj","owner_pid":442931,"leased":null,"lease_holder":null}
+## lab tmux windows
+  lab pane_pid=418524 cwd=/tmp/fm-lab.yRS2BE dead=0
+  fm-lab-mate pane_pid=418583 cwd=/tmp/fm-lab.yRS2BE/mate dead=0
+  fm-labscout-1791790212 pane_pid=442670 cwd=/tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj dead=0
+## worker pane (claude launched in the per-home worktree)
+  |  ▐▛███▛█   Claude Code v2.1.296
+  | ▝▜██████▀  Sonnet 5.5 with low effort · Claude Pro
+  |  ▝▝   ▝▝   /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj
+  | ⚠ Your login expires in 3 days · run /login to renew
+  | ❯ : Firstmate operational input waiting: read '/tmp/fm-lab.yRS2BE/mate/state/operational-inbox/1791790265-b1414de5378fc35b.msg' and handle its contents as Firstmate operational input.
+  |   Read 1 file
+  | ● LABSCOUT
+  | ✻ Baked for 3s · done 12:31 AM
+  |                                                                                                   tmux focus-events off · add 'set -g focus-events on' to ~/.tmux.conf and reattach for focus tracking
+  | ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  | ❯ 
+  | ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  |   ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents

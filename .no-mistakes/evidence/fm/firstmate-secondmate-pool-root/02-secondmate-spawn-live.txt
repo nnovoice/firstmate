@@ -1,0 +1,5 @@
+# bin/fm-spawn.sh --scout from the secondmate lab home (real tmux on lab socket, real treehouse v2.3.0, real claude CLI)
+$ FM_HOME=/tmp/fm-lab.yRS2BE/mate TREEHOUSE_ROOT=/tmp/fm-lab.yRS2BE/treehouse-base bin/fm-spawn.sh labscout-1791790212 /tmp/fm-lab.yRS2BE/mate/projects/proj --scout --harness claude --model sonnet --effort low
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.yRS2BE/mate
+spawned labscout-1791790212 harness=claude kind=scout window=firstmate:fm-labscout-1791790212 worktree=/tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj
+exit=0 elapsed=5s

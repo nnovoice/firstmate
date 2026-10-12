@@ -1,0 +1,37 @@
+# Adversarial: retire the secondmate while its per-home pool holds a slot with NO task record
+## A. slot held by a real treehouse lease (operator's manual 'treehouse get --root ... --lease')
+  leased: /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj
+  state: {"name":"1","owner_pid":null,"leased":true,"lease_holder":"operator-x"}
+$ FM_HOME=/tmp/fm-lab.yRS2BE/main bin/fm-teardown.sh lab-mate 
+  > fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.yRS2BE/main
+  > REFUSED: secondmate home /tmp/fm-lab.yRS2BE/mate still holds Treehouse slot /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj: leased to operator-x; return it, then re-run teardown
+  exit=1
+  mate window alive: fm-lab-mate dead=0
+  intact: /tmp/fm-lab.yRS2BE/mate/.fm-secondmate-home
+  intact: /tmp/fm-lab.yRS2BE/main/state/lab-mate.meta
+  intact: /tmp/fm-lab.yRS2BE/main/data/secondmates.md
+  intact: /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/treehouse-state.json
+$ FM_HOME=/tmp/fm-lab.yRS2BE/main bin/fm-teardown.sh lab-mate --force
+  > fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.yRS2BE/main
+  > REFUSED: secondmate home /tmp/fm-lab.yRS2BE/mate still holds Treehouse slot /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj: leased to operator-x; return it, then re-run teardown
+  exit=1
+  mate window alive: fm-lab-mate dead=0
+  intact: /tmp/fm-lab.yRS2BE/mate/.fm-secondmate-home
+  intact: /tmp/fm-lab.yRS2BE/main/state/lab-mate.meta
+  intact: /tmp/fm-lab.yRS2BE/main/data/secondmates.md
+  intact: /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/treehouse-state.json
+  (lease released by the operator)
+
+## B. slot in use by a live subshell (operator ran interactive 'treehouse get --root' in a lab window)
+  state: {"name":"1","owner_pid":463506,"leased":null,"lease_holder":null}
+$ FM_HOME=/tmp/fm-lab.yRS2BE/main bin/fm-teardown.sh lab-mate --force
+  > fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.yRS2BE/main
+  > REFUSED: secondmate home /tmp/fm-lab.yRS2BE/mate still holds Treehouse slot /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj: in use by pid 463506; return it, then re-run teardown
+  exit=1
+  mate window alive: fm-lab-mate dead=0
+  intact: /tmp/fm-lab.yRS2BE/mate/.fm-secondmate-home
+  intact: /tmp/fm-lab.yRS2BE/main/state/lab-mate.meta
+  intact: /tmp/fm-lab.yRS2BE/main/data/secondmates.md
+  intact: /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/treehouse-state.json
+  (slot returned by the operator)
+  final per-home pool state: {"name":"1","owner_pid":null,"leased":null}

@@ -1,0 +1,25 @@
+# bin/fm-teardown.sh of the secondmate's scout (real treehouse return under the per-home root)
+$ FM_HOME=/tmp/fm-lab.yRS2BE/mate TREEHOUSE_ROOT=/tmp/fm-lab.yRS2BE/treehouse-base bin/fm-teardown.sh labscout-1791790212 --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.yRS2BE/mate
+teardown: reaping leaked worktree process(es) for labscout-1791790212: 443017 445560 446257 447444 447446
+teardown: force-killing leaked worktree process(es) for labscout-1791790212: 443017
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+
+🌳 Worktree returned to pool.
+teardown labscout-1791790212 complete (window firstmate:fm-labscout-1791790212, worktree /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj)
+Backlog: labscout-1791790212 just finished (config/backlog-backend selects manual editing). Update /tmp/fm-lab.yRS2BE/mate/data/backlog.md - move labscout-1791790212 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+exit=0
+
+## per-home pool after teardown (treehouse status --root /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate)
+  1     available    /tmp/fm-lab.yRS2BE/treehouse-base/.fm-pools/lab-mate/.treehouse/proj-b7302f/1/proj
+## per-home pool state entry
+  {"name":"1","owner_pid":null,"leased":null,"lease_holder":null}
+## main home's shared pool still untouched
+  1     available    /tmp/fm-lab.yRS2BE/treehouse-base/.treehouse/proj-b7302f/1/proj
+## leftovers
+  task record removed
+  slot claim released
+## lab tmux windows
+  lab dead=0
+  fm-lab-mate dead=0
