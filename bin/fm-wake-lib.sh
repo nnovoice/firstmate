@@ -1688,14 +1688,17 @@ fm_treehouse_slot_owner_release() {  # <worktree> <task-id>
 # home's identity marker so that spawn, teardown, and any operator status or
 # prune call compute the same root without a recorded value that could drift.
 #
-# The root is ${TREEHOUSE_ROOT:-$HOME}/.fm-pools/<secondmate-id>: the same base
-# Treehouse itself resolves for the main home's pools, so a redirected
-# TREEHOUSE_ROOT keeps every home's pools together, with a per-home directory
-# beneath it. It sits outside every Firstmate home's directory tree on purpose.
+# The root is ${TREEHOUSE_ROOT:-$HOME}/.fm-pools/<secondmate-id>-<home-hash>:
+# the same base Treehouse itself resolves for the main home's pools, so a
+# redirected TREEHOUSE_ROOT keeps every home's pools together, with a per-home
+# directory beneath it. A secondmate id is unique only within its seeding home's
+# registry, so the directory also carries the first 8 hex characters of the
+# `git hash-object` of the home's physical path: two homes sharing an id never
+# share a pool, and spawn and teardown of one home always agree. It sits outside every Firstmate home's directory tree on purpose.
 # A worker's harness walks up from its worktree looking for instruction files,
 # and a root inside the home (its state/, say) put the home's CLAUDE.md - which
 # imports the supervisor contract - on that walk, prompting Claude's external
-# import dialog in every worker there. Nothing above .fm-pools/<id>/.treehouse
+# import dialog in every worker there. Nothing above .fm-pools/<id>-<hash>/.treehouse
 # belongs to a Firstmate home.
 #
 # Prints the root for a secondmate home (one carrying .fm-secondmate-home) and
@@ -1708,7 +1711,7 @@ fm_treehouse_slot_owner_release() {  # <worktree> <task-id>
 # over a project's treehouse.toml, so a clone that still carries a hand-written
 # per-home root keeps working.
 fm_treehouse_home_pool_root() {  # <home>
-  local home=$1 marker id base
+  local home=$1 marker id base hash
   home=$(CDPATH='' cd -- "$home" 2>/dev/null && pwd -P) || {
     echo "error: cannot resolve Firstmate home '$1' to derive its Treehouse pool root" >&2
     return 1
@@ -1748,7 +1751,11 @@ fm_treehouse_home_pool_root() {  # <home>
     esac
   fi
   base=${base%/}
-  printf '%s/.fm-pools/%s\n' "$base" "$id"
+  hash=$(printf '%s' "$home" | git hash-object --stdin 2>/dev/null) && [ "${#hash}" -ge 8 ] || {
+    echo "error: cannot hash Firstmate home path $home with git hash-object; cannot derive this home's Treehouse pool root" >&2
+    return 1
+  }
+  printf '%s/.fm-pools/%s-%s\n' "$base" "$id" "${hash:0:8}"
 }
 
 # The Treehouse root a task's slot is returned under.

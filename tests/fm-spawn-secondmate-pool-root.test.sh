@@ -67,7 +67,7 @@ prepare_home() {  # <home> <task-id>
 # make_fleet <name> <task-id> <secondmate-id>
 # One origin, a main home clone, a secondmate home clone bound to the main home,
 # a Treehouse base (TREEHOUSE_ROOT) holding the main home's pool, and the
-# secondmate's per-home pool under <base>/.fm-pools/<secondmate-id>. Both pools
+# secondmate's per-home pool under the root the library derives for that home. Both pools
 # hold a ready slot. Echoes a |-separated record for read_fleet_record.
 make_fleet() {
   local name=$1 id=$2 mate=$3 case_dir seed origin main_home second_home base second_root main_slot second_slot fakebin
@@ -77,7 +77,6 @@ make_fleet() {
   main_home="$case_dir/main-home"
   second_home="$case_dir/second-home"
   base="$case_dir/treehouse-base"
-  second_root="$base/.fm-pools/$mate"
 
   git init --quiet -b main "$seed"
   printf 'base\n' > "$seed/README.md"
@@ -101,6 +100,7 @@ REC
   fm_write_secondmate_meta "$main_home/state/$mate.meta" "$second_home" "firstmate:fm-$mate" proj
   printf -- '- %s - fixture scope (home: %s; scope: fixture; projects: proj; added 2026-10-12)\n' \
     "$mate" "$second_home" > "$main_home/data/secondmates.md"
+  second_root=$(derive_root "$second_home" TREEHOUSE_ROOT="$base") || return 1
 
   main_slot=$(lay_pool_slot "$base" "$main_home/projects/proj")
   second_slot=$(lay_pool_slot "$second_root" "$second_home/projects/proj")
@@ -158,20 +158,43 @@ derive_root() {  # <home> [env assignments...]
 }
 
 test_resolver_derives_per_home_root_only_for_secondmate_homes() {
-  local rec out status
+  local rec out status leaf other_home other_root
   rec=$(make_fleet resolver pool-root-resolver-r1 mate-resolver)
   read_fleet_record "$rec"
 
   out=$(derive_root "$SECOND_HOME" TREEHOUSE_ROOT="$BASE" 2>&1)
   status=$?
   expect_code 0 "$status" "the resolver should derive a secondmate home's root"$'\n'"$out"
-  assert_equals "$SECOND_ROOT" "$out" "the secondmate root is not <base>/.fm-pools/<id>"
+  leaf=${out#"$BASE/.fm-pools/"}
+  case "$leaf" in
+    mate-resolver-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+    *) fail "the secondmate root is not <base>/.fm-pools/<id>-<8 hex home hash>: '$out'" ;;
+  esac
+
+  ln -s "$SECOND_HOME" "$CASE_DIR/second-home-link"
+  out=$(derive_root "$CASE_DIR/second-home-link" TREEHOUSE_ROOT="$BASE" 2>&1)
+  status=$?
+  expect_code 0 "$status" "the resolver should derive a root through a symlinked home path"$'\n'"$out"
+  assert_equals "$BASE/.fm-pools/$leaf" "$out" "a symlinked path to the same home derived a different root"
 
   out=$(derive_root "$SECOND_HOME" -u TREEHOUSE_ROOT HOME="$CASE_DIR/user-home" 2>&1)
   status=$?
   expect_code 0 "$status" "the resolver should fall back to HOME without TREEHOUSE_ROOT"$'\n'"$out"
-  assert_equals "$CASE_DIR/user-home/.fm-pools/mate-resolver" "$out" \
-    "without TREEHOUSE_ROOT the root is not <HOME>/.fm-pools/<id>"
+  assert_equals "$CASE_DIR/user-home/.fm-pools/$leaf" "$out" \
+    "without TREEHOUSE_ROOT the root is not under <HOME>/.fm-pools"
+
+  other_home="$CASE_DIR/other-install/second-home"
+  mkdir -p "$other_home"
+  printf '%s\n' mate-resolver > "$other_home/.fm-secondmate-home"
+  other_root=$(derive_root "$other_home" TREEHOUSE_ROOT="$BASE" 2>&1)
+  status=$?
+  expect_code 0 "$status" "the resolver should derive a root for a second home sharing the id"$'\n'"$other_root"
+  case "$other_root" in
+    "$BASE/.fm-pools/mate-resolver-"*) ;;
+    *) fail "the second home's root is not keyed by its secondmate id: '$other_root'" ;;
+  esac
+  [ "$other_root" != "$BASE/.fm-pools/$leaf" ] \
+    || fail "two homes carrying the same secondmate id resolved one shared pool root: '$other_root'"
 
   out=$(derive_root "$MAIN_HOME" TREEHOUSE_ROOT="$BASE" 2>&1)
   status=$?
@@ -188,7 +211,7 @@ test_resolver_derives_per_home_root_only_for_secondmate_homes() {
   status=$?
   [ "$status" -ne 0 ] || fail "a malformed identity marker must not yield a per-home root: '$out'"
   assert_contains "$out" "usable secondmate id" "the malformed-marker refusal did not name the marker"
-  pass "the resolver derives <base>/.fm-pools/<id> for a secondmate home, nothing for the main home, and refuses an unusable base or marker"
+  pass "the resolver derives <base>/.fm-pools/<id>-<home-hash> for a secondmate home, distinct per home, nothing for the main home, and refuses an unusable base or marker"
 }
 
 test_secondmate_spawn_lands_in_its_own_clone_under_the_per_home_root() {

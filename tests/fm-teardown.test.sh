@@ -1583,6 +1583,14 @@ EOF
   chmod +x "$case_dir/fakebin/treehouse"
 }
 
+# The per-home pool root bin/fm-wake-lib.sh's fm_treehouse_home_pool_root
+# derives for <home> under the case's Treehouse base, so a case never spells
+# the layout itself. <home> must exist.
+case_home_pool_root() {  # <case-dir> <home>
+  # shellcheck disable=SC2016  # $1/$2 are expanded by the inner bash from its positional arguments, not here
+  TREEHOUSE_ROOT="$1/treehouse-base" bash -c '. "$1"; fm_treehouse_home_pool_root "$2"' _ "$ROOT/bin/fm-wake-lib.sh" "$2"
+}
+
 # The Firstmate home a secondmate retirement case runs as: a case-local main
 # home with a state directory, so the shared Treehouse project lock the child
 # preflight takes resolves there rather than in the repo checkout, and nothing
@@ -1613,7 +1621,7 @@ seed_pool_slot_under_root() {  # <case-dir> <root> <slot> [<branch>] [<state-ext
 
 # A secondmate retirement case whose home owns a per-home pool root holding one
 # slot: the task-x1 secondmate home at $CASE/secondmate-home with no children,
-# the slot <slot> under $CASE/treehouse-base/.fm-pools/task-x1, the logging
+# the slot <slot> under that home's derived pool root (case_home_pool_root), the logging
 # treehouse, a tmux that records every invocation in $CASE/tmux.log so the
 # secondmate window's close is observable, and a case-local main home at
 # $CASE/fm-home. Prints the case dir.
@@ -1625,7 +1633,7 @@ make_secondmate_pool_root_case() {  # <name> <slot> [<state-extra>]
   mkdir -p "$home/state" "$home/data" "$home/config" "$home/projects"
   printf '%s\n' task-x1 > "$home/.fm-secondmate-home"
   printf '%s\n' "home=$home" >> "$case_dir/state/task-x1.meta"
-  seed_pool_slot_under_root "$case_dir" "$case_dir/treehouse-base/.fm-pools/task-x1" "$slot" "" "$state_extra" >/dev/null
+  seed_pool_slot_under_root "$case_dir" "$(case_home_pool_root "$case_dir" "$home")" "$slot" "" "$state_extra" >/dev/null
   add_treehouse_logging "$case_dir"
   : > "$case_dir/tmux.log"
   cat > "$case_dir/fakebin/tmux" <<EOF
@@ -1645,7 +1653,7 @@ EOF
 expect_pool_root_retirement_refused() {  # <case-dir> <slot> <reason>
   local case_dir=$1 slot=$2 reason=$3 rc=0 label pool
   label=$(basename "$case_dir")
-  pool="$case_dir/treehouse-base/.fm-pools/task-x1/.treehouse/project-abc"
+  pool="$(case_home_pool_root "$case_dir" "$case_dir/secondmate-home")/.treehouse/project-abc"
   TREEHOUSE_ROOT="$case_dir/treehouse-base" FM_HOME="$case_dir/fm-home" \
     run_teardown "$case_dir" --force > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
   expect_code 1 "$rc" "$label: a held slot should refuse retirement even under --force"
@@ -1673,9 +1681,9 @@ test_forced_secondmate_child_return_addresses_the_child_home_pool_root() {
   write_meta "$case_dir" local-only secondmate
   home="$case_dir/secondmate-home"
   base="$case_dir/treehouse-base"
-  root="$base/.fm-pools/task-x1"
   mkdir -p "$home/state" "$home/data" "$home/config" "$home/projects"
   printf '%s\n' task-x1 > "$home/.fm-secondmate-home"
+  root=$(case_home_pool_root "$case_dir" "$home")
   printf '%s\n' "home=$home" >> "$case_dir/state/task-x1.meta"
   child_wt="$case_dir/child-scout-wt"
   git -C "$case_dir/project" worktree add -q -b fm/child-scout "$child_wt" main
@@ -1711,7 +1719,7 @@ test_forced_secondmate_child_return_addresses_the_child_home_pool_root() {
 # treehouse.toml root of the field workaround - still sits in that pool, which
 # its path names. Its return must address that pool, not the derived root.
 test_forced_secondmate_child_return_addresses_the_root_its_slot_sits_under() {
-  local case_dir home child_wt rc base old_root fm_home
+  local case_dir home child_wt rc base old_root fm_home root
   case_dir=$(make_case secondmate-child-slot-root)
   write_meta "$case_dir" local-only secondmate
   home="$case_dir/secondmate-home"
@@ -1720,6 +1728,7 @@ test_forced_secondmate_child_return_addresses_the_root_its_slot_sits_under() {
   mkdir -p "$home/state" "$home/data" "$home/config" "$home/projects"
   printf '%s\n' task-x1 > "$home/.fm-secondmate-home"
   printf '%s\n' "home=$home" >> "$case_dir/state/task-x1.meta"
+  root=$(case_home_pool_root "$case_dir" "$home")
   seed_pool_slot_under_root "$case_dir" "$old_root" 3 fm/child-scout >/dev/null
   child_wt="$old_root/.treehouse/project-abc/3/project"
   fm_write_meta "$home/state/child-scout.meta" \
@@ -1738,7 +1747,7 @@ test_forced_secondmate_child_return_addresses_the_root_its_slot_sits_under() {
   expect_code 0 "$rc" "secondmate-child-slot-root: forced secondmate teardown should succeed: $(cat "$case_dir/stderr")"
   grep -Fxq -- "return --root $old_root --force $child_wt" "$case_dir/treehouse.log" \
     || fail "secondmate-child-slot-root: the child return did not address the root its slot sits under; treehouse calls:"$'\n'"$(cat "$case_dir/treehouse.log")"
-  assert_no_grep "--root $base/.fm-pools/task-x1" "$case_dir/treehouse.log" \
+  assert_no_grep "--root $root" "$case_dir/treehouse.log" \
     "secondmate-child-slot-root: a return addressed the derived per-home root instead of the slot's own"
   assert_absent "$home" "secondmate-child-slot-root: secondmate home was not removed"
   pass "a forced secondmate teardown returns a child slot to the pool its recorded path sits in"
@@ -1769,7 +1778,7 @@ test_secondmate_task_return_addresses_the_root_its_slot_sits_under() {
   expect_code 0 "$rc" "secondmate-task-slot-root: teardown should succeed: $(cat "$case_dir/stderr")"
   grep -Fxq -- "return --root $old_root --force $wt" "$case_dir/treehouse.log" \
     || fail "secondmate-task-slot-root: the return did not address the root the slot sits under; treehouse calls:"$'\n'"$(cat "$case_dir/treehouse.log")"
-  assert_no_grep "--root $base/.fm-pools/mate-x" "$case_dir/treehouse.log" \
+  assert_no_grep "--root $(case_home_pool_root "$case_dir" "$fm_home")" "$case_dir/treehouse.log" \
     "secondmate-task-slot-root: the return addressed the derived per-home root instead of the slot's own"
   pass "a secondmate home's task slot is returned to the pool its recorded path sits in"
 }
@@ -1787,7 +1796,7 @@ test_secondmate_retirement_keeps_a_pool_root_with_a_held_slot() {
   expect_pool_root_retirement_refused "$case_dir" 6 "leased to holder-x"
 
   case_dir=$(make_secondmate_pool_root_case secondmate-pool-root-claimed 7)
-  pool="$case_dir/treehouse-base/.fm-pools/task-x1/.treehouse/project-abc"
+  pool="$(case_home_pool_root "$case_dir" "$case_dir/secondmate-home")/.treehouse/project-abc"
   printf 'task=%s\nhome=%s\n' child-z "$case_dir/secondmate-home" > "$pool/7/.fm-slot-owner"
   expect_pool_root_retirement_refused "$case_dir" 7 "claimed by task child-z"
   assert_present "$pool/7/.fm-slot-owner" "secondmate-pool-root-claimed: the claim was removed"
@@ -1800,7 +1809,7 @@ test_secondmate_retirement_keeps_a_pool_root_with_a_held_slot() {
 test_secondmate_retirement_removes_the_pool_root_without_reaching_origin() {
   local case_dir rc root
   case_dir=$(make_secondmate_pool_root_case secondmate-pool-root-offline 8)
-  root="$case_dir/treehouse-base/.fm-pools/task-x1"
+  root=$(case_home_pool_root "$case_dir" "$case_dir/secondmate-home")
   git -C "$case_dir/project" remote set-url origin "$case_dir/no-such-origin.git"
 
   rc=0
@@ -1817,6 +1826,35 @@ test_secondmate_retirement_removes_the_pool_root_without_reaching_origin() {
   assert_grep "kill-window" "$case_dir/tmux.log" \
     "secondmate-pool-root-offline: the secondmate window was never closed, so the refusal cases' no-close assertion proves nothing; tmux calls:"$'\n'"$(cat "$case_dir/tmux.log")"
   pass "secondmate retirement removes the per-home pool root from local state alone, origin unreachable"
+}
+
+# A secondmate id is unique only within its seeding home's registry, so another
+# home carrying the same id - a nested secondmate or a second install - must
+# keep its own pool root when this one retires.
+test_secondmate_retirement_leaves_a_same_id_home_pool_root_intact() {
+  local case_dir rc root other_home other_root
+  case_dir=$(make_secondmate_pool_root_case secondmate-pool-root-same-id 9)
+  root=$(case_home_pool_root "$case_dir" "$case_dir/secondmate-home")
+  other_home="$case_dir/other-install/secondmate-home"
+  mkdir -p "$other_home"
+  printf '%s\n' task-x1 > "$other_home/.fm-secondmate-home"
+  other_root=$(case_home_pool_root "$case_dir" "$other_home")
+  [ "$other_root" != "$root" ] \
+    || fail "secondmate-pool-root-same-id: two homes carrying id task-x1 share pool root $root"
+  seed_pool_slot_under_root "$case_dir" "$other_root" 10 >/dev/null
+
+  rc=0
+  TREEHOUSE_ROOT="$case_dir/treehouse-base" FM_HOME="$case_dir/fm-home" \
+    run_teardown "$case_dir" --force > "$case_dir/stdout" 2> "$case_dir/stderr" || rc=$?
+
+  expect_code 0 "$rc" "secondmate-pool-root-same-id: retirement should succeed: $(cat "$case_dir/stderr")"
+  assert_absent "$root" "secondmate-pool-root-same-id: the retired home's pool root outlived it"
+  assert_present "$other_root/.treehouse/project-abc/10/project/.git" \
+    "secondmate-pool-root-same-id: retiring one home removed the same-id home's pool slot"
+  assert_present "$other_root/.treehouse/project-abc/treehouse-state.json" \
+    "secondmate-pool-root-same-id: retiring one home removed the same-id home's pool state"
+  assert_present "$other_home/.fm-secondmate-home" "secondmate-pool-root-same-id: the other home was touched"
+  pass "retiring a secondmate home leaves another home's pool root intact when both carry the same id"
 }
 
 # Return succeeds but leaves no readable worktree behind to verify.
@@ -5287,6 +5325,7 @@ test_forced_secondmate_child_return_addresses_the_root_its_slot_sits_under
 test_secondmate_task_return_addresses_the_root_its_slot_sits_under
 test_secondmate_retirement_keeps_a_pool_root_with_a_held_slot
 test_secondmate_retirement_removes_the_pool_root_without_reaching_origin
+test_secondmate_retirement_leaves_a_same_id_home_pool_root_intact
 test_forced_secondmate_dirty_child_return_warns_and_completes
 test_return_that_removes_copy_warns_cannot_verify
 test_scout_ignored_files_survive_scratch_clean
