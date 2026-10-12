@@ -1,0 +1,62 @@
+--- treehouse status --root /home/nragh/.fm-pools/labmate-75ed3dda (before teardown)
+
+1     in-use       ~/.fm-pools/labmate-75ed3dda/.treehouse/proj-754781/1/proj
+                   bash (1805744), claude (1807159), npm exec trigger.dev@4.4.3 mcp (1807638), sh (1807718), MainThread (1807719)
+--- fm-teardown.sh pr-live-1
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.ST3FGX
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFUSED: scout task pr-live-1 has no report at /tmp/fm-lab.ST3FGX/data/pr-live-1/report.md.
+The report is the work product. Have the crewmate write it, or use --force after explicit discard approval.
+TD_EXIT=1
+--- treehouse status --root /home/nragh/.fm-pools/labmate-75ed3dda (after teardown)
+
+1     in-use       ~/.fm-pools/labmate-75ed3dda/.treehouse/proj-754781/1/proj
+                   bash (1805744), claude (1807159), npm exec trigger.dev@4.4.3 mcp (1807638), sh (1807718), MainThread (1807719)
+--- shared default pool for this origin (~/.treehouse/proj-754781):
+ls: cannot access '/home/nragh/.treehouse/proj-754781': No such file or directory
+primary:0: bash* (1 panes) [80x24] 
+primary:1: fm-pr-live-1 (1 panes) [80x24] 
+
+=== after writing report.md: fm-teardown.sh pr-live-1
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.ST3FGX
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+fm-captain-hold: origin pr-live-1 has no completed captain-call inventory
+REFUSED: scout task pr-live-1 has not passed the captain-call completion gate.
+Inventory its report and any visual review through bin/fm-captain-hold.sh before teardown.
+TD_EXIT=1
+--- treehouse status --root /home/nragh/.fm-pools/labmate-75ed3dda (after teardown)
+
+1     in-use       ~/.fm-pools/labmate-75ed3dda/.treehouse/proj-754781/1/proj
+                   bash (1805744), claude (1807159), npm exec trigger.dev@4.4.3 mcp (1807638), sh (1807718), MainThread (1807719)
+--- shared default pool ~/.treehouse/proj-754781:
+ls: cannot access '/home/nragh/.treehouse/proj-754781': No such file or directory
+--- lab windows:
+primary:0: bash* (1 panes) [80x24] 
+primary:1: fm-pr-live-1 (1 panes) [80x24] 
+
+=== lab throwaway task: fm-teardown.sh pr-live-1 --force
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.ST3FGX
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+teardown: reaping leaked worktree process(es) for pr-live-1: 1805744 1807159 1807638 1807718 1807719
+teardown: force-killing leaked worktree process(es) for pr-live-1: 1805744
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+
+🌳 Worktree returned to pool.
+teardown pr-live-1 complete (window primary:fm-pr-live-1, worktree /home/nragh/.fm-pools/labmate-75ed3dda/.treehouse/proj-754781/1/proj)
+Backlog: pr-live-1 just finished (config/backlog-backend selects manual editing). Update /tmp/fm-lab.ST3FGX/data/backlog.md - move pr-live-1 to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+TD_EXIT=0
+--- treehouse status --root /home/nragh/.fm-pools/labmate-75ed3dda (after teardown)
+
+1     available    ~/.fm-pools/labmate-75ed3dda/.treehouse/proj-754781/1/proj
+--- slot common-dir: /tmp/fm-lab.ST3FGX/projects/proj/.git
+--- shared default pool ~/.treehouse/proj-754781:
+ls: cannot access '/home/nragh/.treehouse/proj-754781': No such file or directory
+--- lab windows:
+primary:0: bash* (1 panes) [80x24] 

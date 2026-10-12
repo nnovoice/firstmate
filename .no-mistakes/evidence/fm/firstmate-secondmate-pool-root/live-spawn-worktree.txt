@@ -1,0 +1,5 @@
+worktree common-dir: /tmp/fm-lab.ST3FGX/projects/proj/.git
+lab home: /tmp/fm-lab.ST3FGX
+worktree root outside the lab home tree
+--- CLAUDE.md/AGENTS.md on the worktree's ancestor walk:
+(end walk)

@@ -1,0 +1,59 @@
+Fleet: one origin; main-home/projects/proj and second-home/projects/proj both cloned from it; second-home carries .fm-secondmate-home=stockbee; HOME=/tmp/fm-poollive.RL8M7B/userhome; real treehouse v2.3.0.
+Derived per-home root: /tmp/fm-poollive.RL8M7B/userhome/.fm-pools/stockbee-64bf7a25 ; main home derives '' (bare treehouse get)
+
+===== window 0
+nragh@bhagavan:/tmp/fm-poollive.RL8M7B/main-home/projects/proj$ treehouse get
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/proj-754781/1/proj. Type 'exit' to return.
+nragh@bhagavan:~/.treehouse/proj-754781/1/proj$ echo PWD=$(pwd -P); echo COMMOND
+IR=$(git rev-parse --path-format=absolute --git-common-dir)
+PWD=/tmp/fm-poollive.RL8M7B/userhome/.treehouse/proj-754781/1/proj
+COMMONDIR=/tmp/fm-poollive.RL8M7B/main-home/projects/proj/.git
+nragh@bhagavan:~/.treehouse/proj-754781/1/proj$ exit
+exit
+🌳 Worktree returned to pool.
+nragh@bhagavan:/tmp/fm-poollive.RL8M7B/main-home/projects/proj$
+
+===== window bug
+nragh@bhagavan:/tmp/fm-poollive.RL8M7B/second-home/projects/proj$ treehouse get
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/proj-754781/2/proj. Type 'exit' to return.
+nragh@bhagavan:~/.treehouse/proj-754781/2/proj$ echo PWD=$(pwd -P); echo COMMOND
+IR=$(git rev-parse --path-format=absolute --git-common-dir)
+PWD=/tmp/fm-poollive.RL8M7B/userhome/.treehouse/proj-754781/2/proj
+COMMONDIR=/tmp/fm-poollive.RL8M7B/second-home/projects/proj/.git
+nragh@bhagavan:~/.treehouse/proj-754781/2/proj$ exit
+exit
+🌳 Worktree returned to pool.
+nragh@bhagavan:/tmp/fm-poollive.RL8M7B/second-home/projects/proj$
+
+===== window bug2
+treehouse get
+nragh@bhagavan:/tmp/fm-poollive.RL8M7B/second-home/projects/proj$ treehouse get
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.treehouse/proj-754781/1/proj. Type 'exit' to return.
+nragh@bhagavan:~/.treehouse/proj-754781/1/proj$ echo PWD=$(pwd -P); echo COMMOND
+IR=$(git rev-parse --path-format=absolute --git-common-dir)
+PWD=/tmp/fm-poollive.RL8M7B/userhome/.treehouse/proj-754781/1/proj
+COMMONDIR=/tmp/fm-poollive.RL8M7B/main-home/projects/proj/.git
+nragh@bhagavan:~/.treehouse/proj-754781/1/proj$
+
+===== window fix
+nragh@bhagavan:/tmp/fm-poollive.RL8M7B/second-home/projects/proj$ treehouse get
+--root '/tmp/fm-poollive.RL8M7B/userhome/.fm-pools/stockbee-64bf7a25'
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+🌳 Setting up worktree...
+🌳 Entered worktree at ~/.fm-pools/stockbee-64bf7a25/.treehouse/proj-754781/1/pr
+oj. Type 'exit' to return.
+nragh@bhagavan:~/.fm-pools/stockbee-64bf7a25/.treehouse/proj-754781/1/proj$ echo
+ PWD=$(pwd -P); echo COMMONDIR=$(git rev-parse --path-format=absolute --git-comm
+on-dir)
+PWD=/tmp/fm-poollive.RL8M7B/userhome/.fm-pools/stockbee-64bf7a25/.treehouse/proj
+-754781/1/proj
+COMMONDIR=/tmp/fm-poollive.RL8M7B/second-home/projects/proj/.git
+nragh@bhagavan:~/.fm-pools/stockbee-64bf7a25/.treehouse/proj-754781/1/proj$

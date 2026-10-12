@@ -1,0 +1,3 @@
+fm-gate-refuse: gate agent lifecycle permitted only against lab home /tmp/fm-lab.ST3FGX
+spawned pr-live-1 harness=claude kind=scout window=primary:fm-pr-live-1 worktree=/home/nragh/.fm-pools/labmate-75ed3dda/.treehouse/proj-754781/1/proj
+SPAWN_EXIT=0

@@ -1,0 +1,6 @@
+ok - the resolver derives <base>/.fm-pools/<id>-<home-hash> for a secondmate home, distinct per home, nothing for the main home, and refuses an unusable base or marker
+ok - a secondmate spawn types --root <per-home root> and lands in a worktree of its own clone under that root
+ok - a secondmate teardown returns the slot with the same per-home root the spawn acquired it under
+ok - the main home still types a bare treehouse get and returns without a root
+ok - a secondmate home whose pool root cannot be derived refuses before typing treehouse get
+# all fm-spawn-secondmate-pool-root tests passed

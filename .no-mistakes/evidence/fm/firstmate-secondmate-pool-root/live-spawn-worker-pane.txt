@@ -1,0 +1,19 @@
+● The repo has one tracked file, f, on top of the single init commit (8cdbdb4).
+  This was a read-only scout and I made no changes.
+  ┌─────────────────────────────┬────────────────────────────────────────────┐
+  │            Path             │               Tracked by git               │
+  ├─────────────────────────────┼────────────────────────────────────────────┤
+  │ f                           │ Yes                                        │
+  ├─────────────────────────────┼────────────────────────────────────────────┤
+  │ .claude/settings.local.json │ No (it's a local file in the worktree,     │
+  │                             │ outside version control)                   │
+  └─────────────────────────────┴────────────────────────────────────────────┘
+  I didn't count anything under .git/. Your steering inbox
+  /tmp/fm-lab.ST3FGX/state/pr-live-1.inbox has no messages; its handled/ folder
+  is empty too.
+✻ Churned for 9s · done 8:29 AM
+  tmux focus-events off · add 'set -g focus-events on' to ~/.tmux.conf and re…
+────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
