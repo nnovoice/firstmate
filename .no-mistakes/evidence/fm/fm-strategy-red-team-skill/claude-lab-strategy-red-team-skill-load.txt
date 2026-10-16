@@ -1,0 +1,28 @@
+ ▐▛███▛█   Claude Code v2.1.301
+▝▜██████▀  Fable 5.1 · Claude Max
+ ▝▝   ▝▝   ~/.no-mistakes/worktrees/511edcbc7faf/01M537JAPAVA0A4DA979FEA3YA
+❯ Do not read any files with Read, cat, grep or Bash. Step 1: say whether a skill named strategy-red-team appears in your available skills list. Step 2: invoke it with the Skill tool. Step 3: invoke
+  the agent-skill-trigger-index skill with the Skill tool. Then, using ONLY the content those two Skill invocations returned, print exactly these 7 lines and nothing else: RT_LISTED=<yes|no>;
+  RT_LOADED=<yes|no>; RT_TRIGGER=<the full trigger sentence from the loaded strategy-red-team description>; RT_ROUND_CAP=<yes|no, does the loaded skill impose a 3-round cap or call the first scout
+  round 1>; RT_LEDGER_LOCATION=<where the loaded skill says the looks ledger lives>; RT_GATE=<the loaded gate sentence about /opsx:propose>; INDEX_LINE=<the strategy-red-team line from the loaded
+  trigger index>
+● Step 1: Yes, captain, a skill named strategy-red-team appears in the available skills list. Invoking both skills now.
+● Skill(strategy-red-team)
+  ⎿  Successfully loaded skill
+● Skill(agent-skill-trigger-index)
+  ⎿  Successfully loaded skill
+● RT_LISTED=yes
+  RT_LOADED=yes
+  RT_TRIGGER=Load when a strategy project scout reports a verdict and before that verdict is relayed, when briefing a red-team scout for that verdict, when reading its report, or when deciding whether
+  a verdict may proceed to a proposal.
+  RT_ROUND_CAP=no
+  RT_LEDGER_LOCATION=committed in the project repo
+  RT_GATE=No /opsx:propose of a trading rule until the red-team report exists and no open challenge changes the verdict.
+  INDEX_LINE=strategy-red-team - load when a strategy project scout reports a verdict and before that verdict is relayed, when briefing a red-team scout for that verdict, when reading its report, or
+  when deciding whether a verdict may proceed to a proposal.
+✻ Crunched for 8s · done 2:00 PM
+                                                                                                                                                                 ✔ Update installed · Restart to apply
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents
