@@ -573,6 +573,10 @@
       "audience": "agent-runtime"
     },
     {
+      "path": ".agents/skills/strategy-red-team/SKILL.md",
+      "audience": "agent-runtime"
+    },
+    {
       "path": ".agents/skills/validation-supervision/SKILL.md",
       "audience": "agent-runtime"
     }
