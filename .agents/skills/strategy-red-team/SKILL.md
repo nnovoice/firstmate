@@ -1,6 +1,6 @@
 ---
 name: strategy-red-team
-description: Load when briefing a red-team scout for a strategy project's verdict, when reading its report, or when deciding whether a verdict may proceed to a proposal.
+description: Load when a strategy project scout reports a verdict and before that verdict is relayed, when briefing a red-team scout for that verdict, when reading its report, or when deciding whether a verdict may proceed to a proposal.
 user-invocable: false
 metadata:
   internal: true
@@ -16,10 +16,8 @@ It adds no scripts and no brief flags; firstmate writes the red-team brief by ha
 
 - The red team is a scout whose goal is to find the strongest reasons the original verdict is wrong.
 - It reads the original report, rules, pre-registration, frozen code, and run read-backs, and may run its own backtests in the same QuantConnect project under the same limits as the original scout: statistics and closed trades only, one run at a time, and no data export.
-- The red team never tunes a rule; a challenge is a runnable test of the existing rules, not a search for better ones.
-- A red-team exchange runs at most 3 rounds, and the first red-team scout is round 1.
-- The original side answers a challenge through firstmate, never by talking to the red team directly.
-- The brief names the inputs by path, the cloud budget, the tests that must run in order, and the specific challenges for that strategy on top of the common checklist.
+- The original side answers an open challenge through firstmate, because crewmates never talk to each other directly.
+- The brief names the inputs by path, the strategy-specific challenges on top of the common checklist, and any budget.
 
 ## Different model family
 
@@ -51,8 +49,7 @@ The red-team report is `data/<task-id>/report.md` with one row per challenge.
 Each row states the claim, the test, the result, and whether the verdict changes (yes or no).
 The report ends with one final line: `verdict stands` or `verdict changes because ...`.
 "The verdict stands" is an allowed outcome; a red team that finds nothing verdict-changing has done its job.
-Every new backtest id is listed in the report.
-When reading the report, treat an open row whose verdict-changes column is yes as an open verdict-changing challenge until the original side answers it and a later round closes it.
+When reading the report, treat a row whose verdict-changes column is yes as an open verdict-changing challenge until the original side answers it.
 
 ## Looks ledger
 
@@ -60,7 +57,8 @@ Each strategy project keeps a looks ledger committed in the project repo.
 It has one line per out-of-sample window and one line for each time a window was read.
 A window that has been read is spent for rule changes.
 New rules are judged on unspent windows or forward paper trading only.
-The red team's own out-of-sample reads are looks, so its brief bounds them to the listed tests and the red team records them in the ledger.
+The red team's own out-of-sample reads are looks, so it records each of them in the ledger, including its own backtests by id.
+Because a read window is spent, the red team does not change rules on windows it reads.
 
 ## Pre-registration before the first run
 
@@ -72,4 +70,4 @@ A hypothesis whose hash postdates its first run was not pre-registered; the chec
 
 No `/opsx:propose` of a trading rule until the red-team report exists and no open challenge changes the verdict.
 Firstmate checks this gate before dispatching a proposal for a strategy project.
-A verdict with no red-team report, or with an open verdict-changing challenge, goes back to the red-team rounds or to the captain, not to a proposal.
+A verdict with no red-team report, or with an open verdict-changing challenge, goes back to the red team or to the captain, not to a proposal.
