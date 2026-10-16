@@ -424,6 +424,26 @@ For spawn-capable adapters, the runtime session-provider backend controls where 
 
 Treehouse remains the worktree provider for tmux, herdr, zellij, and cmux, since herdr, zellij, and cmux are session providers only; Orca provides both the task worktree and terminal endpoint.
 
+### Per-home worktree pools
+
+Treehouse keys a worktree pool by the project's origin and lays every pool under one root, `<root>/.treehouse/<repo>-<origin-hash>/<slot>/<repo>`, where the root is the project's `treehouse.toml` `root`, else `TREEHOUSE_ROOT`, else `$HOME`.
+The main home leaves that resolution to Treehouse unchanged, so its task worktrees pool under `~/.treehouse/` by default.
+
+A secondmate home's project clone usually shares its origin with the main home's clone, so under Treehouse's own resolution both homes would resolve to one pool whose slots are worktrees of whichever clone created it, and the secondmate's worker would be handed a worktree of the main home's clone.
+A secondmate home therefore pools its task worktrees under its own root, `${TREEHOUSE_ROOT:-$HOME}/.fm-pools/<secondmate-id>-<home-hash>`, derived from the home's `.fm-secondmate-home` identity marker and its physical path.
+The `<home-hash>` is the first 8 hex characters of the `git hash-object` of the home's physical path, so two homes that carry the same secondmate id, such as nested secondmates or a second Firstmate install, never share a pool.
+`fm-spawn.sh` passes it as `--root` on the `treehouse get` it types into the worker's window, so the choice never reaches the shared tmux session's environment, and `fm-teardown.sh` passes a `--root` on every `treehouse return` for that home's slots.
+The per-home root needs Treehouse v2.2.0 or newer, where `--root` was added, and `bin/fm-bootstrap.sh` reports an older install as a treehouse upgrade.
+The root lives outside every firstmate home's directory tree on purpose: a worker's harness walks up from its worktree looking for instruction files, and a root inside the home would put the home's `CLAUDE.md`, which imports the supervisor contract, on that walk.
+
+An explicit `--root` overrides a project clone's `treehouse.toml`, so a clone that still carries a hand-written per-home root keeps working.
+A slot already held under such a root is returned to the pool that holds it: `fm-teardown.sh` derives the return root from the recorded worktree path whenever it has Treehouse's pool layout, and uses the per-home root only when it does not.
+Operator `treehouse status` or `treehouse prune` calls inside a secondmate home need the same `--root` to see that home's pools.
+A secondmate home whose identity marker cannot be read, or whose base (`TREEHOUSE_ROOT`, else `HOME`) is not an absolute path, refuses spawn and teardown rather than falling back to the shared pool.
+Retiring a secondmate home also retires its per-home root once every child slot has been returned, since every slot there is a linked worktree of the home's own clone: the home is removed first and the root directory is then removed directly, without contacting the origin.
+Before the secondmate's own window is closed or any of its records removed, retirement reads local state only: a slot still claimed by a task, or recorded as leased or in use in the pool's `treehouse-state.json`, refuses, leaving the secondmate running with its home, route, and records intact, and names the slot and that reason; `--force` does not override it.
+The exact derivation is owned by `fm_treehouse_home_pool_root` and `fm_treehouse_return_root` in [`bin/fm-wake-lib.sh`](../bin/fm-wake-lib.sh).
+
 ### Backend selection order
 
 New spawns choose the backend in this order:
@@ -728,6 +748,7 @@ A preexisting project-bearing charter is also refused until it is re-scaffolded 
 
 The lease is held under the secondmate id until explicit retirement or seed rollback returns it, so normal restarts do not free or recycle the home.
 Teardown of a leased home fails closed if `treehouse return` cannot release the lease; plain-clone homes with no treehouse pool slot are removed directly.
+The home's own task worktrees pool under a per-home Treehouse root rather than the main home's pool, and retirement removes that root once every slot in it has been returned; see [Per-home worktree pools](#per-home-worktree-pools).
 
 ### Project modes and backlog handoff
 

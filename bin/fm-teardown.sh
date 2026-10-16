@@ -167,6 +167,19 @@
 # These refusals are not relaxed by --force: --force authorizes discarding THIS
 # task's unlanded work, never another task's live work. Nothing of this task's
 # own is removed by a refusal; reconcile whichever record is wrong and re-run.
+# A Treehouse return passes `--root` for a secondmate home's slot - its own task
+# slots and, under forced secondmate teardown, each child slot of the home being
+# retired - so the return addresses the pool that holds the slot: the root the
+# recorded worktree sits under when its path has Treehouse's pool layout, else
+# the home's per-home root; bin/fm-wake-lib.sh's fm_treehouse_home_pool_root and
+# fm_treehouse_return_root own the derivation, the main home's returns carry no
+# root, and an underivable root refuses rather than returning a slot to a pool
+# that never held it. Retiring a secondmate home also retires its per-home pool
+# root (firstmate_home_pool_root_retirable, remove_firstmate_home_pool_root):
+# every slot there is a linked worktree of the home's own clone, so the root
+# must not outlive the home. The check reads local state only - ownership
+# claims and the pool's treehouse-state.json - so it never reaches the origin;
+# a claimed, leased, or in-use slot keeps the root and the home in place.
 # Orca is not a pool slot and proves its path through
 # require_orca_worktree_path_match instead.
 # Orca tasks use the same safety checks, then close the recorded terminal and
@@ -1824,13 +1837,18 @@ cleanup_stale_lock_for_safety_check() {
 
 # Return a worktree/home via `treehouse return --force`, tolerating a transient or
 # stale git index.lock left by a killed crew process. See the script header.
+# <root>, when non-empty, is the Treehouse root the slot was acquired under and
+# is passed as `--root` so the return addresses the same pool as the acquire;
+# bin/fm-wake-lib.sh's fm_treehouse_home_pool_root owns which homes have one.
 teardown_treehouse_return() {
-  local dir=$1 cd_dir=$2 label=$3 post_cleanup_check=${4:-}
+  local dir=$1 cd_dir=$2 label=$3 post_cleanup_check=${4:-} root=${5:-}
   local out lock attempt=0 max_retries lock_desc
+  local -a root_args=()
+  [ -z "$root" ] || root_args=(--root "$root")
 
   # Capture stdout+stderr so non-lock failures stay visible and lock failures can
   # be matched by signature even when the lock file is already gone mid-check.
-  if out=$( ( cd "$cd_dir" && treehouse return --force "$dir" ) 2>&1 ); then
+  if out=$( ( cd "$cd_dir" && treehouse return "${root_args[@]+"${root_args[@]}"}" --force "$dir" ) 2>&1 ); then
     [ -n "$out" ] && printf '%s\n' "$out"
     return 0
   fi
@@ -1855,7 +1873,7 @@ teardown_treehouse_return() {
     echo "teardown: $label return failed with transient git lock ($lock_desc); waiting ${TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS}s and retrying ($attempt/${max_retries})" >&2
     sleep "$TREEHOUSE_RETURN_LOCK_RETRY_WAIT_SECS"
 
-    if out=$( ( cd "$cd_dir" && treehouse return --force "$dir" ) 2>&1 ); then
+    if out=$( ( cd "$cd_dir" && treehouse return "${root_args[@]+"${root_args[@]}"}" --force "$dir" ) 2>&1 ); then
       [ -n "$out" ] && printf '%s\n' "$out"
       echo "teardown: $label return succeeded on retry; lock cleared on its own" >&2
       return 0
@@ -1882,7 +1900,7 @@ teardown_treehouse_return() {
           return 1
         fi
       fi
-      if out=$( ( cd "$cd_dir" && treehouse return --force "$dir" ) 2>&1 ); then
+      if out=$( ( cd "$cd_dir" && treehouse return "${root_args[@]+"${root_args[@]}"}" --force "$dir" ) 2>&1 ); then
         [ -n "$out" ] && printf '%s\n' "$out"
         echo "teardown: $label return succeeded after stale-lock cleanup" >&2
         return 0
@@ -2735,6 +2753,80 @@ remove_firstmate_home() {
   return 1
 }
 
+# A secondmate home's per-home Treehouse pool root (bin/fm-wake-lib.sh's
+# fm_treehouse_home_pool_root) must not outlive the home: every slot under it is
+# a linked worktree of the home's project clone, so a root left behind would
+# hold dangling worktrees and a stale treehouse-state.json, and a later seed
+# reusing the id would be handed that broken pool. Retirement therefore removes
+# the root right after the home, from local state alone: it never contacts the
+# origin, so being offline cannot block it.
+#
+# firstmate_home_pool_root_retirable is a preflight: it runs once every child
+# slot has been returned but before the home's own endpoint is closed or any of
+# its records removed, so a refusal leaves the secondmate running with its home,
+# route, and records intact rather than registered without a supervisor. It
+# prints the root (empty when the home has none or is already gone) and refuses
+# while any slot is still held - a Firstmate ownership claim beside the
+# checkout, or a treehouse-state.json entry that is leased or in use - naming
+# the slot and that exact reason; running after the child returns means it
+# protects a slot some live owner still holds and discards no unlanded work.
+# remove_firstmate_home_pool_root then deletes the root once the home is
+# gone; the clone every slot belonged to went with the home, so git worktree
+# deregistration is moot, and a failed removal is reported rather than undoing
+# a retirement that already happened.
+firstmate_home_pool_root_retirable() {  # <home> <label>
+  local home=$1 label=$2 root state claim claimant held
+  [ -e "$home" ] || [ -L "$home" ] || return 0
+  root=$(fm_treehouse_home_pool_root "$home") || {
+    echo "error: could not derive the Treehouse pool root for $label $home; retaining the home" >&2
+    return 1
+  }
+  [ -n "$root" ] || return 0
+  [ -e "$root" ] || [ -L "$root" ] || return 0
+  if [ ! -d "$root" ] || [ -L "$root" ]; then
+    echo "REFUSED: Treehouse pool root $root for $label $home is not a directory; retaining the home" >&2
+    return 1
+  fi
+  for claim in "$root"/.treehouse/*/*/.fm-slot-owner; do
+    [ -e "$claim" ] || [ -L "$claim" ] || continue
+    claimant=$(sed -n 's/^task=//p' "$claim" 2>/dev/null | head -n 1)
+    echo "REFUSED: $label $home still holds Treehouse slot $(dirname "$claim"): claimed by task ${claimant:-<unreadable>}; return it, then re-run teardown" >&2
+    return 1
+  done
+  for state in "$root"/.treehouse/*/treehouse-state.json; do
+    [ -e "$state" ] || [ -L "$state" ] || continue
+    command -v jq >/dev/null 2>&1 || {
+      echo "error: jq not found; cannot read Treehouse pool state $state to prove $label $home holds no slot; retaining the home" >&2
+      return 1
+    }
+    held=$(jq -r '
+      (.worktrees // [])[]
+      | select(.owner_pid != null or .leased == true or ((.lease_id // "") != ""))
+      | "\(.path // .name // "?")\t" + (
+          if .owner_pid != null then "in use by pid \(.owner_pid)"
+          else "leased" + (if (.lease_holder // "") != "" then " to \(.lease_holder)" else "" end)
+          end)
+    ' "$state" 2>/dev/null) || {
+      echo "error: cannot read Treehouse pool state $state; retaining $label $home and its pool root $root" >&2
+      return 1
+    }
+    if [ -n "$held" ]; then
+      held=${held%%$'\n'*}
+      echo "REFUSED: $label $home still holds Treehouse slot ${held%%$'\t'*}: ${held#*$'\t'}; return it, then re-run teardown" >&2
+      return 1
+    fi
+  done
+  printf '%s\n' "$root"
+}
+
+remove_firstmate_home_pool_root() {  # <root> <label>
+  local root=$1 label=$2
+  [ -n "$root" ] || return 0
+  [ -e "$root" ] || [ -L "$root" ] || return 0
+  safe_rm_rf "$root" "$label pool root" \
+    || echo "warning: could not remove Treehouse pool root $root after retiring $label; remove it by hand" >&2
+}
+
 firstmate_home_has_process_events() {
   local home=$1 path owner claim_root
   for path in "$home/state/procevent"/*.source "$home/state/procevent"/*.runner; do
@@ -3251,9 +3343,16 @@ endpoint_close_refusal() {  # <subject> <backend> <target> <honors-force>
 }
 
 cleanup_firstmate_home_children() {
-  local home=$1 sub_state child_meta child_id child_t child_wt child_proj child_kind child_home child_backend child_orca_worktree_id child_return_rc child_busy_gen child_owner_rc child_pool_slot
+  local home=$1 sub_state child_meta child_id child_t child_wt child_proj child_kind child_home child_backend child_orca_worktree_id child_return_rc child_busy_gen child_owner_rc child_pool_slot child_pool_root child_return_root child_home_pool_root
   sub_state="$home/state"
   [ -d "$sub_state" ] || return 0
+  # The children's Treehouse slots were acquired under THIS home's pool root, so
+  # their returns address that root rather than the parent's. Refusing when it
+  # cannot be derived returns no child slot to a pool that never held it.
+  child_pool_root=$(fm_treehouse_home_pool_root "$home") || {
+    echo "error: could not derive the Treehouse pool root for child firstmate home $home; retaining its child worktrees and stopping forced cleanup" >&2
+    return 1
+  }
   for child_meta in "$sub_state"/*.meta; do
     [ -e "$child_meta" ] || continue
     child_id=$(basename "$child_meta" .meta)
@@ -3271,6 +3370,16 @@ cleanup_firstmate_home_children() {
       child_orca_worktree_id=$(require_orca_worktree_id "$child_meta") || return 1
       if [ -n "$child_wt" ] && [ -e "$child_wt" ]; then
         validate_child_worktree_for_removal "$child_wt" "$child_proj" >/dev/null || return 1
+      fi
+    fi
+    child_home=
+    child_home_pool_root=
+    if [ "$child_kind" = secondmate ]; then
+      child_home=$(meta_value "$child_meta" home)
+      [ -n "$child_home" ] || child_home=$child_wt
+      if [ -n "$child_home" ] && [ -d "$child_home" ]; then
+        cleanup_firstmate_home_children "$child_home" || return $?
+        child_home_pool_root=$(firstmate_home_pool_root_retirable "$child_home" "child firstmate home") || return 1
       fi
     fi
     if [ -n "$child_t" ]; then
@@ -3296,11 +3405,9 @@ cleanup_firstmate_home_children() {
       fi
     fi
     if [ "$child_kind" = secondmate ]; then
-      child_home=$(meta_value "$child_meta" home)
-      [ -n "$child_home" ] || child_home=$child_wt
       if [ -n "$child_home" ] && [ -d "$child_home" ]; then
-        cleanup_firstmate_home_children "$child_home" || return $?
         remove_firstmate_home "$child_home" "child firstmate home" "$child_id" || return $?
+        remove_firstmate_home_pool_root "$child_home_pool_root" "child firstmate home $child_home"
       fi
     elif [ "$child_backend" = orca ]; then
       if [ -n "$child_wt" ] && [ -d "$child_wt" ]; then
@@ -3331,7 +3438,8 @@ cleanup_firstmate_home_children() {
           teardown_scrub_scratch_copy "$child_wt" || return 1
           child_pool_slot=0
           fm_treehouse_pool_slot "$child_proj" "$child_wt" && child_pool_slot=1
-          if teardown_treehouse_return "$child_wt" "$child_proj" "child worktree"; then
+          child_return_root=$(fm_treehouse_return_root "$child_pool_root" "$child_wt")
+          if teardown_treehouse_return "$child_wt" "$child_proj" "child worktree" "" "$child_return_root"; then
             [ "$child_pool_slot" = 0 ] || teardown_note_dirty_return "$child_wt"
             fm_treehouse_slot_owner_release "$child_wt" "$child_id"
           else
@@ -3431,6 +3539,10 @@ fi
 
 if [ "$KIND" = secondmate ] && [ "$FORCE" = "--force" ]; then
   cleanup_firstmate_home_children "$HOME_PATH" || exit $?
+fi
+HOME_POOL_ROOT=
+if [ "$KIND" = secondmate ]; then
+  HOME_POOL_ROOT=$(firstmate_home_pool_root_retirable "$HOME_PATH" "secondmate home") || exit 1
 fi
 
 if [ "$KIND" = scout ] && [ "$FORCE" != "--force" ]; then
@@ -3663,8 +3775,14 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
     "$WT/.fm-grok-turnend" "$WT/.fm-kimi-turnend"
   # Kills remaining processes in the worktree (including the agent), resets, returns
   # to pool. treehouse resolves the pool from the working directory, so run it from
-  # the project. teardown_treehouse_return tolerates transient and stale git locks
-  # left by a killed crew process; see the script header for retry and stale-lock proof.
+  # the project, under the same per-home root the spawn acquired it with (empty
+  # for the main home). teardown_treehouse_return tolerates transient and stale git
+  # locks left by a killed crew process; see the script header for retry and stale-lock proof.
+  wt_pool_root=$(fm_treehouse_home_pool_root "$FM_HOME") || {
+    echo "error: could not derive the Treehouse pool root for Firstmate home $FM_HOME; refusing to return worktree $WT to a pool that may not hold it" >&2
+    exit 1
+  }
+  wt_pool_root=$(fm_treehouse_return_root "$wt_pool_root" "$WT")
   post_lock_cleanup_check=
   if [ "$FORCE" != "--force" ] && [ "$KIND" != scout ] && [ "$KIND" != secondmate ]; then
     post_lock_cleanup_check=validate_worktree_teardown_safety
@@ -3674,7 +3792,7 @@ elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
   fi
   wt_pool_slot=0
   fm_treehouse_pool_slot "$PROJ" "$WT" && wt_pool_slot=1
-  teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" || {
+  teardown_treehouse_return "$WT" "$PROJ" "worktree" "$post_lock_cleanup_check" "$wt_pool_root" || {
     echo "error: treehouse return failed for worktree $WT; teardown aborted" >&2
     exit 1
   }
@@ -3791,7 +3909,7 @@ if [ "$KIND" = secondmate ]; then
   pending_replies_recovery_validate recheck \
     || { echo "error: local pending-reply recovery paths changed; preserving the secondmate home and route" >&2; exit 1; }
   if remove_firstmate_home "$HOME_PATH" "secondmate home" "$ID"; then
-    :
+    remove_firstmate_home_pool_root "$HOME_POOL_ROOT" "secondmate home $HOME_PATH"
   else
     rc=$?
     handoff_wake_retire_stage_restore \
